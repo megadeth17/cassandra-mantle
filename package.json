@@ -1,0 +1,7 @@
+{
+  "name": "cassandra",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": ["contracts", "backend", "frontend"],
+  "engines": { "node": ">=18" }
+}
