@@ -1,6 +1,7 @@
 "use client";
 import { useSignals } from "../lib/useSignals";
 import { HitRate } from "../components/HitRate";
+import { DetectorBreakdown } from "../components/DetectorBreakdown";
 import { CallLedger } from "../components/CallLedger";
 import { ThinkingFeed } from "../components/ThinkingFeed";
 
@@ -13,6 +14,7 @@ export default function Home() {
         <p className="font-mono text-ink-dim">the seer whose calls are provable</p>
       </header>
       <HitRate calls={calls} />
+      <DetectorBreakdown calls={calls} />
       <ThinkingFeed />
       {loading ? <p className="text-center text-ink-dim">reading the chain…</p> : <CallLedger calls={calls} />}
     </main>
