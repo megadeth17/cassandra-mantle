@@ -7,3 +7,4 @@ cache/
 .next/
 coverage/
 *.log
+.cursor.json
