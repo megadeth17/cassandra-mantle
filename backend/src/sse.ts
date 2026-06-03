@@ -17,5 +17,12 @@ export function startSSE(port = 8787) {
 
 export function broadcast(event: unknown) {
   const line = `data: ${JSON.stringify(event)}\n\n`;
-  for (const c of clients) c.write(line);
+  for (const c of clients) {
+    try {
+      if (!c.writableEnded) c.write(line);
+      else clients.delete(c);
+    } catch {
+      clients.delete(c);
+    }
+  }
 }

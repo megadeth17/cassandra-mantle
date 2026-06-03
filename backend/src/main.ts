@@ -1,16 +1,22 @@
 import { config } from "./config.js";
-import { client, fetchEvents } from "./ingest/ingest.js";
+import { client, fetchBlock } from "./ingest/ingest.js";
 import { RollingState } from "./engine/state.js";
 import { RollingBaseline } from "./engine/baseline.js";
 import { Cooldown } from "./engine/cooldown.js";
 import { runDetectors } from "./detectors/index.js";
+import { contractInteractionSpike } from "./detectors/contractInteractionSpike.js";
 import { makePublisher } from "./chain/registry.js";
 import { makeBot } from "./telegram/bot.js";
 import { makeResolver, type PendingCall } from "./resolver/resolver.js";
 import { loadCursor, saveCursor } from "./state-cursor.js";
 import { startSSE, broadcast } from "./sse.js";
+import type { ChainEvent, Signal } from "@shared/types";
 
 const POLL_MS = 5000;
+
+// price source: returns 0 (=> outcome "unresolvable" => stays pending) until
+// Phase 4 wires a real Mantle pool price. priceAt is captured via this same fn.
+const priceOf = async (_subject: `0x${string}`): Promise<number> => 0;
 
 async function main() {
   const state = new RollingState({ windowSec: 24 * 3600 });
@@ -20,71 +26,77 @@ async function main() {
   const publisher = makePublisher();
   const bot = makeBot();
   const pending: PendingCall[] = [];
-  const resolver = makeResolver(async (_subject: `0x${string}`) => 0);
+  const resolver = makeResolver(priceOf);
 
   if (bot.configured) bot.start();
   startSSE();
 
-  let cursor =
-    config.startBlock === "latest"
-      ? await client.getBlockNumber()
-      : loadCursor(BigInt(config.startBlock));
-
+  let cursor = config.startBlock === "latest" ? await client.getBlockNumber() : loadCursor(BigInt(config.startBlock));
   let backoff = POLL_MS;
-  const interactionCount = new Map<string, number>();
+
+  async function publish(s: Signal, now: number) {
+    if (!cooldown.allow(s.type, s.subject, s.ts)) return;
+    if (!publisher.configured) {
+      broadcast({ kind: "signal-dry", signal: { ...s, blockNumber: s.blockNumber.toString() } });
+      return;
+    }
+    try {
+      const tx = await publisher.submit(s);                 // on-chain FIRST
+      const priceAt = await priceOf(s.subject);
+      pending.push({ id: s.id, type: s.type, direction: s.direction, subject: s.subject, submittedAt: s.ts, priceAt });
+      broadcast({ kind: "signal", signal: { ...s, blockNumber: s.blockNumber.toString() }, tx });
+      if (bot.configured) bot.send(s, tx).catch((e) => broadcast({ kind: "degraded", reason: `telegram: ${String(e)}` })); // fire-and-forget
+    } catch (e) {
+      broadcast({ kind: "degraded", reason: "submit failed", id: s.id });
+    }
+  }
 
   for (;;) {
     try {
       const head = await client.getBlockNumber();
-      if (head <= cursor) { await sleep(POLL_MS); continue; }
-      const to = head;
-      const events = await fetchEvents(cursor + 1n, to);
-      const now = Math.floor(Date.now() / 1000);
+      while (cursor < head) {
+        const bn = cursor + 1n;
+        const { events, interactions, ts } = await fetchBlock(bn);
+        const now = ts; // block time everywhere
 
-      interactionCount.clear();
-      for (const ev of events) {
-        if (ev.kind === "transfer" && ev.token && ev.from && ev.to && ev.value !== undefined) {
-          state.recordFlow(ev.token, ev.from, ev.to, ev.value, ev.ts);
-        }
-        if (ev.kind === "call" && ev.contract) {
-          interactionCount.set(ev.contract, (interactionCount.get(ev.contract) ?? 0) + 1);
-        }
-      }
-
-      for (const ev of events) {
-        broadcast({ kind: "thinking", block: ev.blockNumber.toString(), evKind: ev.kind, subject: ev.token ?? ev.pool ?? ev.contract });
-        const signals = runDetectors(ev, {
-          state, liquidityBaseline, interactionBaseline, now,
-          interactionCount: (c) => interactionCount.get(c) ?? 0,
-        });
-        for (const s of signals) {
-          if (!cooldown.allow(s.type, s.subject, s.ts)) continue;
-          if (publisher.configured) {
-            try {
-              const tx = await publisher.submit(s);
-              pending.push({ id: s.id, type: s.type, direction: s.direction, subject: s.subject, submittedAt: s.ts, priceAt: 0 });
-              broadcast({ kind: "signal", signal: { ...s, blockNumber: s.blockNumber.toString() }, tx });
-              if (bot.configured) await bot.send(s, tx);
-            } catch (e) {
-              broadcast({ kind: "degraded", reason: "submit failed", id: s.id });
-            }
-          } else {
-            broadcast({ kind: "signal-dry", signal: { ...s, blockNumber: s.blockNumber.toString() } });
+        // update flow state (deduped by txHash:logIndex)
+        for (const ev of events) {
+          if (ev.kind === "transfer" && ev.token && ev.from && ev.to && ev.value !== undefined) {
+            state.recordFlow(ev.token, ev.from, ev.to, ev.value, ev.ts, `${ev.txHash}:${ev.logIndex}`);
           }
         }
-      }
 
-      if (resolver.configured) {
-        const resolved = await resolver.resolveDue(pending, now);
-        for (const id of resolved) {
-          const i = pending.findIndex((p) => p.id === id);
-          if (i >= 0) pending.splice(i, 1);
-          broadcast({ kind: "resolved", id });
+        // per-event detectors (whaleFlow / newWallet / abnormalLiquidity)
+        for (const ev of events) {
+          broadcast({ kind: "thinking", block: bn.toString(), evKind: ev.kind, subject: ev.token ?? ev.pool });
+          const signals = runDetectors(ev, {
+            state, liquidityBaseline, interactionBaseline, now,
+            interactionCount: () => 0, // contract spike handled per-block below
+          });
+          for (const s of signals) await publish(s, now);
         }
-      }
 
-      cursor = to;
-      saveCursor(cursor);
+        // contract-interaction spike: evaluate ONCE per contract for this block
+        for (const [contract, count] of interactions) {
+          broadcast({ kind: "thinking", block: bn.toString(), evKind: "call", subject: contract });
+          const ev: ChainEvent = { blockNumber: bn, txHash: "0x0", logIndex: -1, kind: "call", contract: contract as `0x${string}`, ts };
+          const sig = contractInteractionSpike(interactionBaseline, ev, count);
+          if (sig) await publish(sig, now);
+        }
+
+        // resolve due calls (skips "unresolvable" => stays pending)
+        if (resolver.configured) {
+          const resolved = await resolver.resolveDue(pending, now);
+          for (const id of resolved) {
+            const i = pending.findIndex((p) => p.id === id);
+            if (i >= 0) pending.splice(i, 1);
+            broadcast({ kind: "resolved", id });
+          }
+        }
+
+        cursor = bn;
+        saveCursor(cursor); // per-block durability: a crash replays at most one block
+      }
       backoff = POLL_MS;
       await sleep(POLL_MS);
     } catch (e) {

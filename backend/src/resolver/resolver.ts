@@ -46,12 +46,10 @@ export function makeResolver(getPrice: (subject: `0x${string}`) => Promise<numbe
         if (now - c.submittedAt < window) continue;
         const priceAfter = await getPrice(c.subject);
         const outcome = decideOutcome(c.direction, c.priceAt, priceAfter, 0.05);
+        if (outcome === "unresolvable") continue; // leave pending, retry next pass
         const hash = await wallet.writeContract({
-          address,
-          abi: SIGNAL_REGISTRY_ABI,
-          functionName: "resolve",
-          args: [c.id, outcome === "hit" ? HIT : MISS],
-          chain: null,
+          address, abi: SIGNAL_REGISTRY_ABI, functionName: "resolve",
+          args: [c.id, outcome === "hit" ? HIT : MISS], chain: null,
         });
         await client.waitForTransactionReceipt({ hash });
         done.push(c.id);

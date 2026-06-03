@@ -58,3 +58,31 @@ export async function fetchEvents(fromBlock: bigint, toBlock: bigint): Promise<C
   );
   return events;
 }
+
+export interface BlockData {
+  events: ChainEvent[];
+  interactions: Map<string, number>; // contract(lowercased) -> tx count in this block
+  ts: number;
+}
+
+/** Fetch a single block's decoded log-events PLUS per-contract transaction counts. */
+export async function fetchBlock(blockNumber: bigint): Promise<BlockData> {
+  const block = await client.getBlock({ blockNumber, includeTransactions: true });
+  const ts = Number(block.timestamp);
+  const logs = await client.getLogs({ fromBlock: blockNumber, toBlock: blockNumber });
+  const events = logs
+    .map((l) => decodeLog(l, ts))
+    .filter((e): e is ChainEvent => e !== null)
+    .sort((a, b) => a.logIndex - b.logIndex);
+
+  const interactions = new Map<string, number>();
+  for (const tx of block.transactions) {
+    // includeTransactions:true => full tx objects (not just hashes)
+    const to = (tx as { to?: `0x${string}` | null }).to;
+    if (to) {
+      const key = to.toLowerCase();
+      interactions.set(key, (interactions.get(key) ?? 0) + 1);
+    }
+  }
+  return { events, interactions, ts };
+}

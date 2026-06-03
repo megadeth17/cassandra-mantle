@@ -4,10 +4,12 @@ export class RollingState {
   private windowSec: number;
   private flows: FlowRec[] = [];
   private seen = new Map<string, number>(); // wallet -> first ts
+  private seenEvents = new Set<string>();
 
   constructor(opts: { windowSec: number }) { this.windowSec = opts.windowSec; }
 
-  recordFlow(token: string, from: string, to: string, value: bigint, ts: number) {
+  recordFlow(token: string, from: string, to: string, value: bigint, ts: number, eventKey?: string) {
+    if (eventKey) { if (this.seenEvents.has(eventKey)) return; this.seenEvents.add(eventKey); }
     if (!this.seen.has(to)) this.seen.set(to, ts);
     if (!this.seen.has(from)) this.seen.set(from, ts);
     this.flows.push({ token, from, to, value, ts });

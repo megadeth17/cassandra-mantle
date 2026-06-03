@@ -16,4 +16,11 @@ describe("RollingState", () => {
     s.recordFlow("0xtok", "0xa", "0xb", 10n, 1201); // 201s later -> first evicted
     expect(s.netInflow("0xtok", "0xb")).to.equal(10n);
   });
+
+  it("ignores a duplicate flow with the same event key", () => {
+    const s = new RollingState({ windowSec: 3600 });
+    s.recordFlow("0xtok", "0xa", "0xb", 100n, 1000, "0xtx:0");
+    s.recordFlow("0xtok", "0xa", "0xb", 100n, 1000, "0xtx:0"); // same key -> ignored
+    expect(s.netInflow("0xtok", "0xb")).to.equal(100n);
+  });
 });

@@ -15,4 +15,10 @@ describe("decideOutcome", () => {
     expect(decideOutcome("neutral", 100, 108, 0.05)).to.equal("hit");
     expect(decideOutcome("neutral", 100, 100.5, 0.05)).to.equal("miss");
   });
+  it("returns unresolvable when priceAt is zero", () => {
+    expect(decideOutcome("bullish", 0, 100, 0.05)).to.equal("unresolvable");
+  });
+  it("returns unresolvable when a price is non-finite", () => {
+    expect(decideOutcome("bearish", 100, Infinity, 0.05)).to.equal("unresolvable");
+  });
 });
