@@ -31,4 +31,16 @@ contract AgentIdentity is ERC721, Ownable {
         agentName[id] = name_;
         agentBio[id] = bio_;
     }
+
+    /// @notice Soulbound: identity cannot be transferred once minted. Submit
+    /// rights are permanently bound to the deployer-controlled address.
+    function _update(address to, uint256 tokenId, address auth)
+        internal
+        override
+        returns (address)
+    {
+        address from = _ownerOf(tokenId);
+        require(from == address(0), "soulbound: non-transferable");
+        return super._update(to, tokenId, auth);
+    }
 }

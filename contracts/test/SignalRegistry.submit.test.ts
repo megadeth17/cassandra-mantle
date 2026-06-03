@@ -37,4 +37,14 @@ describe("SignalRegistry.submit", () => {
     await reg.submit("dup:1", 0, ethers.ZeroAddress, 1, 50, ev);
     await expect(reg.submit("dup:1", 0, ethers.ZeroAddress, 1, 50, ev)).to.be.revertedWith("exists");
   });
+
+  it("reverts when score exceeds 100", async () => {
+    const { reg } = await deploy();
+    await expect(reg.submit("s:1", 0, ethers.ZeroAddress, 0, 101, ev)).to.be.revertedWith("score>100");
+  });
+
+  it("reverts setResolver from a non-deployer", async () => {
+    const { reg, stranger } = await deploy();
+    await expect(reg.connect(stranger).setResolver(stranger.address)).to.be.revertedWith("not deployer");
+  });
 });

@@ -33,4 +33,15 @@ describe("SignalRegistry.resolve", () => {
     await reg.submit("a", 0, ethers.ZeroAddress, 1, 90, ev);
     await expect(reg.connect(other).resolve("a", 1)).to.be.revertedWith("not resolver");
   });
+
+  it("reverts resolving a nonexistent signal", async () => {
+    const { reg } = await deploy();
+    await expect(reg.resolve("missing", 1)).to.be.revertedWith("no signal");
+  });
+
+  it("reverts on an invalid outcome value", async () => {
+    const { reg } = await deploy();
+    await reg.submit("a", 0, ethers.ZeroAddress, 1, 90, ev);
+    await expect(reg.resolve("a", 0)).to.be.revertedWith("bad outcome");
+  });
 });

@@ -18,4 +18,14 @@ describe("AgentIdentity", () => {
     await id.waitForDeployment();
     await expect(id.mint()).to.be.revertedWith("already minted");
   });
+
+  it("reverts on transfer attempts (soulbound)", async () => {
+    const [owner, other] = await ethers.getSigners();
+    const F = await ethers.getContractFactory("AgentIdentity");
+    const id = await F.deploy("Cassandra", "x");
+    await id.waitForDeployment();
+    await expect(
+      id.transferFrom(owner.address, other.address, 1n)
+    ).to.be.revertedWith("soulbound: non-transferable");
+  });
 });

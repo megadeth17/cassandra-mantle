@@ -37,6 +37,7 @@ contract SignalRegistry {
 
     event SignalSubmitted(string indexed idKey, string id, uint8 signalType, address subject, uint8 direction, uint16 score, bytes32 evidenceHash, uint64 ts);
     event SignalResolved(string indexed idKey, string id, uint8 status, uint64 ts);
+    event ResolverChanged(address indexed previous, address indexed next);
 
     modifier onlyAgent() {
         require(identity.ownerOf(agentId) == msg.sender, "not agent");
@@ -52,7 +53,9 @@ contract SignalRegistry {
 
     function setResolver(address r) external {
         require(msg.sender == deployer, "not deployer");
+        address prev = resolver;
         resolver = r;
+        emit ResolverChanged(prev, r);
     }
 
     function submit(
