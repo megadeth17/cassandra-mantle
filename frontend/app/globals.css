@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { --ease: cubic-bezier(0.16, 1, 0.3, 1); }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+body { @apply bg-surface text-ink font-mono; background-image: radial-gradient(circle at 50% 0%, #14201a 0%, #0b0e0c 60%); min-height: 100vh; }
