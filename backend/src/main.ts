@@ -8,15 +8,14 @@ import { contractInteractionSpike } from "./detectors/contractInteractionSpike.j
 import { makePublisher } from "./chain/registry.js";
 import { makeBot } from "./telegram/bot.js";
 import { makeResolver, type PendingCall } from "./resolver/resolver.js";
+import { priceForSubject } from "./resolver/price.js";
 import { loadCursor, saveCursor } from "./state-cursor.js";
 import { startSSE, broadcast } from "./sse.js";
 import type { ChainEvent, Signal } from "@shared/types";
 
 const POLL_MS = 5000;
 
-// price source: returns 0 (=> outcome "unresolvable" => stays pending) until
-// Phase 4 wires a real Mantle pool price. priceAt is captured via this same fn.
-const priceOf = async (_subject: `0x${string}`): Promise<number> => 0;
+const priceOf = priceForSubject;
 
 async function main() {
   const state = new RollingState({ windowSec: 24 * 3600 });
