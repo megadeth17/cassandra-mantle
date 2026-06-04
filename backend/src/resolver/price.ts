@@ -16,15 +16,19 @@ export async function poolSpot(pool: `0x${string}`): Promise<number> {
   }
 }
 
-/** Map a signal subject (token/wallet/pool address) to the pool used to price it.
- *  Fill with known Mantle pools at deploy time. Empty by default => price 0 =>
- *  calls stay pending (no false resolutions) until pools are configured. */
+/** Verified Merchant Moe classic (getReserves) pairs on Mantle mainnet.
+ *  Maps a TOKEN address (lowercased) -> the pool used to price it. */
 export const SUBJECT_POOL: Record<string, `0x${string}`> = {
-  // "0xsubjectaddrlowercased": "0xpooladdr",
+  "0x4515a45337f461a11ff0fe8abf3c606ae5dc00c9": "0x763868612858358f62b05691db82ad35a9b3e110", // MOE  -> MOE/WMNT
+  "0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8": "0x763868612858358f62b05691db82ad35a9b3e110", // WMNT -> MOE/WMNT
+  "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9": "0x8e3a13418743ab1a98434551937ea687e451b589", // USDC -> USDC/USDT
+  "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae": "0x8e3a13418743ab1a98434551937ea687e451b589", // USDT -> USDC/USDT
 };
 
-/** Resolve a subject to a price via its mapped pool, else 0 (unresolvable). */
-export async function priceForSubject(subject: `0x${string}`): Promise<number> {
-  const pool = SUBJECT_POOL[subject.toLowerCase()];
-  return pool ? poolSpot(pool) : 0;
+/** Resolve an address to a price. If it's a known token, price via its mapped
+ *  pool; otherwise treat the address itself as a pool (abnormal_liquidity case)
+ *  and read its reserves directly. Returns 0 (=> unresolvable) if unreadable. */
+export async function priceForSubject(addr: `0x${string}`): Promise<number> {
+  const pool = SUBJECT_POOL[addr.toLowerCase()] ?? addr;
+  return poolSpot(pool);
 }

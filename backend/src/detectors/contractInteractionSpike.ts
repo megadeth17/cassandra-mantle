@@ -38,5 +38,6 @@ export function contractInteractionSpike(
     evidence: { count: countThisBlock, mean, std, z },
     blockNumber: ev.blockNumber,
     ts: ev.ts,
+    priceToken: undefined,
   };
 }

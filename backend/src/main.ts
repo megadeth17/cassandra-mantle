@@ -41,8 +41,8 @@ async function main() {
     }
     try {
       const tx = await publisher.submit(s);                 // on-chain FIRST
-      const priceAt = await priceOf(s.subject);
-      pending.push({ id: s.id, type: s.type, direction: s.direction, subject: s.subject, submittedAt: s.ts, priceAt });
+      const priceAt = s.priceToken ? await priceOf(s.priceToken) : 0;
+      pending.push({ id: s.id, type: s.type, direction: s.direction, subject: s.subject, submittedAt: s.ts, priceAt, priceToken: s.priceToken });
       broadcast({ kind: "signal", signal: { ...s, blockNumber: s.blockNumber.toString() }, tx });
       if (bot.configured) bot.send(s, tx).catch((e) => broadcast({ kind: "degraded", reason: `telegram: ${String(e)}` })); // fire-and-forget
     } catch (e) {

@@ -32,4 +32,5 @@ export interface Signal {
   evidence: Record<string, unknown>; // the numbers/txs that triggered it
   blockNumber: bigint;
   ts: number;
+  priceToken?: `0x${string}`; // address to price for resolution (token for flow signals, pool for liquidity); undefined => unresolvable
 }

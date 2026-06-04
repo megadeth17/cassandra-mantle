@@ -1,9 +1,9 @@
 import { createPublicClient, http } from "viem";
 
 export const RPC =
-  process.env.NEXT_PUBLIC_MANTLE_RPC ?? "https://rpc.sepolia.mantle.xyz";
+  process.env.NEXT_PUBLIC_MANTLE_RPC ?? "https://rpc.mantle.xyz";
 export const REGISTRY = process.env.NEXT_PUBLIC_SIGNAL_REGISTRY as `0x${string}`;
-export const EXPLORER = "https://sepolia.mantlescan.xyz";
+export const EXPLORER = "https://mantlescan.xyz";
 
 export const publicClient = createPublicClient({ transport: http(RPC) });
 

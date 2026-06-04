@@ -26,6 +26,7 @@ export function abnormalLiquidity(baseline: RollingBaseline, ev: ChainEvent): Si
       evidence: { reserve, mean, std: 0, z: Infinity, txHash: ev.txHash },
       blockNumber: ev.blockNumber,
       ts: ev.ts,
+      priceToken: ev.pool,
     };
   }
   const z = (reserve - mean) / std;
@@ -41,5 +42,6 @@ export function abnormalLiquidity(baseline: RollingBaseline, ev: ChainEvent): Si
     evidence: { reserve, mean, std, z, txHash: ev.txHash },
     blockNumber: ev.blockNumber,
     ts: ev.ts,
+    priceToken: ev.pool,
   };
 }

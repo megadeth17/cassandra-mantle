@@ -28,5 +28,6 @@ export function whaleFlow(state: RollingState, ev: ChainEvent): Signal | null {
     },
     blockNumber: ev.blockNumber,
     ts: ev.ts,
+    priceToken: ev.token,
   };
 }

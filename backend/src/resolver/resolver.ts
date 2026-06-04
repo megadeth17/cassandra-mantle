@@ -21,6 +21,7 @@ export interface PendingCall {
   subject: `0x${string}`;
   submittedAt: number;
   priceAt: number;
+  priceToken?: `0x${string}`;
 }
 
 const HIT = 1, MISS = 2;
@@ -44,7 +45,8 @@ export function makeResolver(getPrice: (subject: `0x${string}`) => Promise<numbe
       for (const c of pending) {
         const window = RESOLUTION_WINDOW[c.type] ?? 6 * 3600;
         if (now - c.submittedAt < window) continue;
-        const priceAfter = await getPrice(c.subject);
+        if (!c.priceToken) continue;                 // nothing priceable -> stays pending
+        const priceAfter = await getPrice(c.priceToken);
         const outcome = decideOutcome(c.direction, c.priceAt, priceAfter, 0.05);
         if (outcome === "unresolvable") continue; // leave pending, retry next pass
         const hash = await wallet.writeContract({

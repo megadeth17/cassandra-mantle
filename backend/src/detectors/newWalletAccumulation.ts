@@ -25,5 +25,6 @@ export function newWalletAccumulation(state: RollingState, ev: ChainEvent, now: 
     evidence: { token: ev.token, ageSec: age, netInflow: net.toString(), txHash: ev.txHash },
     blockNumber: ev.blockNumber,
     ts: ev.ts,
+    priceToken: ev.token,
   };
 }

@@ -3,7 +3,7 @@ import type { Signal } from "@shared/types";
 import { formatSignal } from "./format.js";
 import { config } from "../config.js";
 
-const EXPLORER = "https://sepolia.mantlescan.xyz";
+const EXPLORER = "https://mantlescan.xyz";
 const DASHBOARD = process.env.DASHBOARD_URL ?? "https://cassandra.app";
 
 export function makeBot() {
