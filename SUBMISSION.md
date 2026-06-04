@@ -30,11 +30,11 @@ Mantle RPC → block-by-block ingestion → 4 pure-function detectors → on-cha
 - Backend: 22 passing (Vitest) — every detector, rolling state/baseline/cooldown, log decode, evidence hash + enum encoding, outcome decision + unresolvable guard, flow dedup, telegram formatting.
 - Frontend: clean `next build`.
 
-## Deployed addresses (fill after testnet deploy)
-- AgentIdentity: `0x…`
-- SignalRegistry: `0x…`
-- Deploy tx (proof of on-chain): `0x…`
-- Agent identity token id: 1
+## Deployed addresses (Mantle mainnet, chainId 5000)
+- AgentIdentity: `0x3f6a671a81Fc7f24BF378aBCf8E31AD7bEd65250` — https://mantlescan.xyz/address/0x3f6a671a81Fc7f24BF378aBCf8E31AD7bEd65250
+- SignalRegistry: `0x708dFb5fFea4B0149E6F1714F5A72D5291f0bB5b` — https://mantlescan.xyz/address/0x708dFb5fFea4B0149E6F1714F5A72D5291f0bB5b
+- Agent identity token id: 1 (soulbound, owned by the agent operator address)
+- Agent operator: `0xD64872bC1B77B6550e7aA0a51E35E61Ebca21f04`
 
 ## Links (fill before submission)
 - Repo: `…`

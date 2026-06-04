@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { publicClient, REGISTRY } from "./chain";
+import { publicClient, REGISTRY, FROM_BLOCK } from "./chain";
 import { REGISTRY_EVENTS_ABI } from "./registryAbi";
 
 export interface Call {
@@ -47,12 +47,12 @@ export function useSignals() {
         const submitted = await publicClient.getLogs({
           address: REGISTRY,
           event: REGISTRY_EVENTS_ABI[0],
-          fromBlock: BigInt(0),
+          fromBlock: FROM_BLOCK,
         });
         const resolved = await publicClient.getLogs({
           address: REGISTRY,
           event: REGISTRY_EVENTS_ABI[1],
-          fromBlock: BigInt(0),
+          fromBlock: FROM_BLOCK,
         });
 
         const map = new Map<string, Call>();

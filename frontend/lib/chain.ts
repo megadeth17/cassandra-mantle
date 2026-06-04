@@ -6,6 +6,7 @@ export const REGISTRY = process.env.NEXT_PUBLIC_SIGNAL_REGISTRY as `0x${string}`
 export const EXPLORER = "https://mantlescan.xyz";
 
 export const publicClient = createPublicClient({ transport: http(RPC) });
+export const FROM_BLOCK = BigInt(process.env.NEXT_PUBLIC_REGISTRY_FROM_BLOCK ?? "0");
 
 // Must match Solidity enum order exactly
 export const TYPE_LABEL = [
