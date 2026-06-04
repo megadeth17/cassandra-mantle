@@ -4,7 +4,8 @@
   "scripts": {
     "test": "hardhat test",
     "compile": "hardhat compile",
-    "deploy:testnet": "hardhat run scripts/deploy.ts --network mantleSepolia"
+    "deploy:testnet": "hardhat run scripts/deploy.ts --network mantleSepolia",
+    "deploy:mainnet": "hardhat run scripts/deploy.ts --network mantle"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",

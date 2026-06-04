@@ -1,7 +1,7 @@
 # Cassandra — Turing Test Hackathon 2026 Submission
 
 **Track:** AI Alpha & Data
-**Network:** Mantle (Sepolia testnet, chainId 5003)
+**Network:** Mantle mainnet (chainId 5000)
 
 ## One-line
 The seer whose calls are provable: an autonomous on-chain alpha agent that writes every signal to Mantle under its own ERC-8004 identity — before the outcome is known — so its hit-rate is unfakeable.
