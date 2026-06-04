@@ -1,0 +1,7 @@
+{
+  "network": "mantle",
+  "chainId": 5000,
+  "agentIdentity": "0x3f6a671a81Fc7f24BF378aBCf8E31AD7bEd65250",
+  "signalRegistry": "0x708dFb5fFea4B0149E6F1714F5A72D5291f0bB5b",
+  "agentId": 1
+}
