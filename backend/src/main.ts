@@ -69,29 +69,33 @@ async function main() {
         const { events, interactions, ts } = await fetchBlock(bn);
         const now = ts; // block time everywhere
 
-        // update flow state (deduped by txHash:logIndex)
-        for (const ev of events) {
-          if (ev.kind === "transfer" && ev.token && ev.from && ev.to && ev.value !== undefined) {
-            state.recordFlow(ev.token, ev.from, ev.to, ev.value, ev.ts, `${ev.txHash}:${ev.logIndex}`);
+        // Detection + inscription. Skipped entirely in resolve-only mode, which
+        // spends gas ONLY on closing existing pending calls (no new burn).
+        if (!config.resolveOnly) {
+          // update flow state (deduped by txHash:logIndex)
+          for (const ev of events) {
+            if (ev.kind === "transfer" && ev.token && ev.from && ev.to && ev.value !== undefined) {
+              state.recordFlow(ev.token, ev.from, ev.to, ev.value, ev.ts, `${ev.txHash}:${ev.logIndex}`);
+            }
           }
-        }
 
-        // per-event detectors (whaleFlow / newWallet / abnormalLiquidity)
-        for (const ev of events) {
-          broadcast({ kind: "thinking", block: bn.toString(), evKind: ev.kind, subject: ev.token ?? ev.pool });
-          const signals = runDetectors(ev, {
-            state, liquidityBaseline, interactionBaseline, now,
-            interactionCount: () => 0, // contract spike handled per-block below
-          });
-          for (const s of signals) await publish(s, now);
-        }
+          // per-event detectors (whaleFlow / newWallet / abnormalLiquidity)
+          for (const ev of events) {
+            broadcast({ kind: "thinking", block: bn.toString(), evKind: ev.kind, subject: ev.token ?? ev.pool });
+            const signals = runDetectors(ev, {
+              state, liquidityBaseline, interactionBaseline, now,
+              interactionCount: () => 0, // contract spike handled per-block below
+            });
+            for (const s of signals) await publish(s, now);
+          }
 
-        // contract-interaction spike: evaluate ONCE per contract for this block
-        for (const [contract, count] of interactions) {
-          broadcast({ kind: "thinking", block: bn.toString(), evKind: "call", subject: contract });
-          const ev: ChainEvent = { blockNumber: bn, txHash: "0x0", logIndex: -1, kind: "call", contract: contract as `0x${string}`, ts };
-          const sig = contractInteractionSpike(interactionBaseline, ev, count);
-          if (sig) await publish(sig, now);
+          // contract-interaction spike: evaluate ONCE per contract for this block
+          for (const [contract, count] of interactions) {
+            broadcast({ kind: "thinking", block: bn.toString(), evKind: "call", subject: contract });
+            const ev: ChainEvent = { blockNumber: bn, txHash: "0x0", logIndex: -1, kind: "call", contract: contract as `0x${string}`, ts };
+            const sig = contractInteractionSpike(interactionBaseline, ev, count);
+            if (sig) await publish(sig, now);
+          }
         }
 
         // resolve due calls (skips "unresolvable" => stays pending)

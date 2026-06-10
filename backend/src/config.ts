@@ -18,4 +18,8 @@ export const config = {
   minPublishScore: Number(process.env.MIN_PUBLISH_SCORE ?? "0"),
   // Port for the SSE "thinking" feed. Override on a shared box to avoid clashes.
   ssePort: Number(process.env.SSE_PORT ?? "8787"),
+  // Resolve-only mode: run the resolver to CLOSE outstanding pending calls but
+  // inscribe NOTHING new. Spends gas only on resolutions — used to populate the
+  // hit-rate from existing pending without risking another inscription burn.
+  resolveOnly: process.env.RESOLVE_ONLY === "1" || process.env.RESOLVE_ONLY === "true",
 };
