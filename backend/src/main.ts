@@ -30,7 +30,7 @@ async function main() {
   const resolver = makeResolver(priceOf);
 
   if (bot.configured) bot.start();
-  startSSE();
+  startSSE(config.ssePort);
 
   let cursor = config.startBlock === "latest" ? await client.getBlockNumber() : loadCursor(BigInt(config.startBlock));
   let backoff = POLL_MS;

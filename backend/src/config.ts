@@ -16,4 +16,6 @@ export const config = {
   // Only inscribe signals scoring at/above this floor. Conserves gas and keeps
   // the on-chain record to high-conviction calls. 0 = publish everything.
   minPublishScore: Number(process.env.MIN_PUBLISH_SCORE ?? "0"),
+  // Port for the SSE "thinking" feed. Override on a shared box to avoid clashes.
+  ssePort: Number(process.env.SSE_PORT ?? "8787"),
 };
