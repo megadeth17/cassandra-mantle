@@ -8,3 +8,10 @@ cache/
 coverage/
 *.log
 .cursor.json
+.pending.json
+*.tsbuildinfo
+contracts/typechain-types/
+frontend/.playwright-cli/
+.claude/
+hero.png
+mid.png

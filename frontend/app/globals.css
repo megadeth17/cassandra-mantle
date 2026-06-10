@@ -2,7 +2,69 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { --ease: cubic-bezier(0.16, 1, 0.3, 1); }
-@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+:root {
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --oracle: #c9a227;
+  --oracle-glow: #e8c44d;
+}
 
-body { @apply bg-surface text-ink font-mono; background-image: radial-gradient(circle at 50% 0%, #14201a 0%, #0b0e0c 60%); min-height: 100vh; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  @apply bg-surface text-ink font-mono;
+  min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201, 162, 39, 0.07) 0%, transparent 60%),
+    radial-gradient(circle at 50% 100%, rgba(20, 32, 26, 0.4) 0%, #0b0e0c 60%);
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(201, 162, 39, 0.25); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(201, 162, 39, 0.45); }
+
+.oracle-glow {
+  text-shadow: 0 0 24px rgba(201, 162, 39, 0.35), 0 0 48px rgba(201, 162, 39, 0.08);
+}
+
+.oracle-glow-box {
+  box-shadow: 0 0 40px rgba(201, 162, 39, 0.06), inset 0 1px 0 rgba(201, 162, 39, 0.08);
+}
+
+.panel {
+  @apply bg-surface-panel/80 border border-oracle/10 rounded-xl;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+@keyframes pulse-live {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.pulse-live { animation: pulse-live 2s ease-in-out infinite; }
+
+@keyframes ring-fill {
+  from { stroke-dashoffset: var(--ring-circumference); }
+  to { stroke-dashoffset: var(--ring-offset); }
+}
+.ring-animated { animation: ring-fill 1.5s var(--ease) forwards; }
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-up { animation: fade-up 0.7s var(--ease) forwards; opacity: 0; }
+
+.stagger > * { opacity: 0; animation: fade-up 0.5s var(--ease) forwards; }
+.stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger > *:nth-child(2) { animation-delay: 0.12s; }
+.stagger > *:nth-child(3) { animation-delay: 0.19s; }
+.stagger > *:nth-child(4) { animation-delay: 0.26s; }

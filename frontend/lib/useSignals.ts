@@ -1,7 +1,32 @@
 "use client";
 import { useEffect, useState } from "react";
+import type { AbiEvent } from "viem";
 import { publicClient, REGISTRY, FROM_BLOCK } from "./chain";
 import { REGISTRY_EVENTS_ABI } from "./registryAbi";
+
+// Public Mantle RPC caps eth_getLogs at a 10k-block span per call, so we page
+// the full registry history in safe windows and aggregate. Without this the
+// dashboard silently reads nothing (the deploy block is ~280k blocks back).
+const LOG_WINDOW = 9000n;
+
+async function getLogsPaged<TEvent extends AbiEvent>(
+  event: TEvent,
+  from: bigint,
+  to: bigint,
+): Promise<Array<{ args: any }>> {
+  const out: Array<{ args: any }> = [];
+  for (let start = from; start <= to; start += LOG_WINDOW) {
+    const end = start + LOG_WINDOW - 1n > to ? to : start + LOG_WINDOW - 1n;
+    const logs = await publicClient.getLogs({
+      address: REGISTRY,
+      event,
+      fromBlock: start,
+      toBlock: end,
+    });
+    out.push(...(logs as Array<{ args: any }>));
+  }
+  return out;
+}
 
 export interface Call {
   id: string;
@@ -14,46 +39,19 @@ export interface Call {
   resolvedTs?: number;
 }
 
-const MOCK: Call[] = [
-  {
-    id: "whale_flow:0xabc:100",
-    type: 0,
-    subject: "0xabc...beef",
-    direction: 0,
-    score: 88,
-    ts: 1700000000,
-    status: 1,
-  },
-  {
-    id: "abnormal_liquidity:0xpool:140",
-    type: 2,
-    subject: "0xpool...d00d",
-    direction: 1,
-    score: 74,
-    ts: 1700003600,
-    status: 0,
-  },
-];
-
 export function useSignals() {
   const [calls, setCalls] = useState<Call[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
     (async () => {
       try {
         if (!REGISTRY) throw new Error("no registry configured");
-        const submitted = await publicClient.getLogs({
-          address: REGISTRY,
-          event: REGISTRY_EVENTS_ABI[0],
-          fromBlock: FROM_BLOCK,
-        });
-        const resolved = await publicClient.getLogs({
-          address: REGISTRY,
-          event: REGISTRY_EVENTS_ABI[1],
-          fromBlock: FROM_BLOCK,
-        });
+        const head = await publicClient.getBlockNumber();
+        const submitted = await getLogsPaged(REGISTRY_EVENTS_ABI[0], FROM_BLOCK, head);
+        const resolved = await getLogsPaged(REGISTRY_EVENTS_ABI[1], FROM_BLOCK, head);
 
         const map = new Map<string, Call>();
 
@@ -79,10 +77,17 @@ export function useSignals() {
           }
         }
 
-        if (active)
+        if (active) {
           setCalls(Array.from(map.values()).sort((x, y) => y.ts - x.ts));
-      } catch {
-        if (active) setCalls(MOCK); // standalone demo without live chain
+          setError(null);
+        }
+      } catch (e) {
+        // No mock fallback: the thesis is that the record can't be faked, so a
+        // read failure surfaces an honest empty + error state, never fake rows.
+        if (active) {
+          setCalls([]);
+          setError(e instanceof Error ? e.message : "failed to read registry");
+        }
       } finally {
         if (active) setLoading(false);
       }
@@ -92,5 +97,5 @@ export function useSignals() {
     };
   }, []);
 
-  return { calls, loading };
+  return { calls, loading, error };
 }

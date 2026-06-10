@@ -10,6 +10,7 @@ import { makeBot } from "./telegram/bot.js";
 import { makeResolver, type PendingCall } from "./resolver/resolver.js";
 import { priceForSubject } from "./resolver/price.js";
 import { loadCursor, saveCursor } from "./state-cursor.js";
+import { loadPending, savePending } from "./state-pending.js";
 import { startSSE, broadcast } from "./sse.js";
 import type { ChainEvent, Signal } from "@shared/types";
 
@@ -24,7 +25,8 @@ async function main() {
   const cooldown = new Cooldown(3600);
   const publisher = makePublisher();
   const bot = makeBot();
-  const pending: PendingCall[] = [];
+  // Rehydrate in-flight calls so resolutions survive restarts.
+  const pending: PendingCall[] = loadPending();
   const resolver = makeResolver(priceOf);
 
   if (bot.configured) bot.start();
@@ -34,15 +36,24 @@ async function main() {
   let backoff = POLL_MS;
 
   async function publish(s: Signal, now: number) {
+    if (s.score < config.minPublishScore) return;          // conviction floor
     if (!cooldown.allow(s.type, s.subject, s.ts)) return;
     if (!publisher.configured) {
       broadcast({ kind: "signal-dry", signal: { ...s, blockNumber: s.blockNumber.toString() } });
       return;
     }
+    // Resolvability gate: compute the submit-time price baseline BEFORE spending
+    // gas. If the subject can't be priced, the call could never resolve — so we
+    // skip it rather than inscribe a permanently-pending, gas-wasting signal.
+    const priceAt = s.priceToken ? await priceOf(s.priceToken) : 0;
+    if (!priceAt || !isFinite(priceAt)) {
+      broadcast({ kind: "thinking", block: s.blockNumber.toString(), evKind: "skip-unpriceable", subject: s.subject });
+      return;
+    }
     try {
       const tx = await publisher.submit(s);                 // on-chain FIRST
-      const priceAt = s.priceToken ? await priceOf(s.priceToken) : 0;
       pending.push({ id: s.id, type: s.type, direction: s.direction, subject: s.subject, submittedAt: s.ts, priceAt, priceToken: s.priceToken });
+      savePending(pending);                                 // durable across restarts
       broadcast({ kind: "signal", signal: { ...s, blockNumber: s.blockNumber.toString() }, tx });
       if (bot.configured) bot.send(s, tx).catch((e) => broadcast({ kind: "degraded", reason: `telegram: ${String(e)}` })); // fire-and-forget
     } catch (e) {
@@ -86,10 +97,13 @@ async function main() {
         // resolve due calls (skips "unresolvable" => stays pending)
         if (resolver.configured) {
           const resolved = await resolver.resolveDue(pending, now);
-          for (const id of resolved) {
-            const i = pending.findIndex((p) => p.id === id);
-            if (i >= 0) pending.splice(i, 1);
-            broadcast({ kind: "resolved", id });
+          if (resolved.length) {
+            for (const id of resolved) {
+              const i = pending.findIndex((p) => p.id === id);
+              if (i >= 0) pending.splice(i, 1);
+              broadcast({ kind: "resolved", id });
+            }
+            savePending(pending);                           // persist after closures
           }
         }
 

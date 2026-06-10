@@ -13,4 +13,7 @@ export const config = {
   telegramToken: process.env.TELEGRAM_BOT_TOKEN,
   telegramChannel: process.env.TELEGRAM_CHANNEL_ID,
   startBlock: process.env.START_BLOCK ?? "latest",
+  // Only inscribe signals scoring at/above this floor. Conserves gas and keeps
+  // the on-chain record to high-conviction calls. 0 = publish everything.
+  minPublishScore: Number(process.env.MIN_PUBLISH_SCORE ?? "0"),
 };
