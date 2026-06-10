@@ -8,22 +8,46 @@ import { REGISTRY_EVENTS_ABI } from "./registryAbi";
 // the full registry history in safe windows and aggregate. Without this the
 // dashboard silently reads nothing (the deploy block is ~280k blocks back).
 const LOG_WINDOW = 9000n;
+const LOG_CONCURRENCY = 3; // parallel windows per event; ×2 events = peak 6 (safe on public RPC)
+
+async function getLogsWindow<TEvent extends AbiEvent>(
+  event: TEvent,
+  from: bigint,
+  to: bigint,
+  tries = 3,
+): Promise<Array<{ args: any }>> {
+  // Retry per window: the public RPC occasionally rate-limits a burst. Without
+  // a retry, one transient failure would reject the whole load and the
+  // dashboard would silently show nothing.
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const logs = await publicClient.getLogs({ address: REGISTRY, event, fromBlock: from, toBlock: to });
+      return logs as Array<{ args: any }>;
+    } catch (e) {
+      if (attempt >= tries - 1) throw e;
+      await new Promise((r) => setTimeout(r, 350 * (attempt + 1)));
+    }
+  }
+}
 
 async function getLogsPaged<TEvent extends AbiEvent>(
   event: TEvent,
   from: bigint,
   to: bigint,
 ): Promise<Array<{ args: any }>> {
-  const out: Array<{ args: any }> = [];
+  // Page the ~280k-block history in 9k windows, fetched in small parallel
+  // batches (sequential paging takes ~20s — bad on camera). Conservative
+  // concurrency + per-window retry keeps it both fast and reliable.
+  const windows: Array<[bigint, bigint]> = [];
   for (let start = from; start <= to; start += LOG_WINDOW) {
     const end = start + LOG_WINDOW - 1n > to ? to : start + LOG_WINDOW - 1n;
-    const logs = await publicClient.getLogs({
-      address: REGISTRY,
-      event,
-      fromBlock: start,
-      toBlock: end,
-    });
-    out.push(...(logs as Array<{ args: any }>));
+    windows.push([start, end]);
+  }
+  const out: Array<{ args: any }> = [];
+  for (let i = 0; i < windows.length; i += LOG_CONCURRENCY) {
+    const batch = windows.slice(i, i + LOG_CONCURRENCY);
+    const results = await Promise.all(batch.map(([start, end]) => getLogsWindow(event, start, end)));
+    for (const logs of results) out.push(...logs);
   }
   return out;
 }
@@ -50,8 +74,10 @@ export function useSignals() {
       try {
         if (!REGISTRY) throw new Error("no registry configured");
         const head = await publicClient.getBlockNumber();
-        const submitted = await getLogsPaged(REGISTRY_EVENTS_ABI[0], FROM_BLOCK, head);
-        const resolved = await getLogsPaged(REGISTRY_EVENTS_ABI[1], FROM_BLOCK, head);
+        const [submitted, resolved] = await Promise.all([
+          getLogsPaged(REGISTRY_EVENTS_ABI[0], FROM_BLOCK, head),
+          getLogsPaged(REGISTRY_EVENTS_ABI[1], FROM_BLOCK, head),
+        ]);
 
         const map = new Map<string, Call>();
 
