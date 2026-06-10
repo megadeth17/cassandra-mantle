@@ -51,6 +51,15 @@
 - NO dejar 100% desatendido (machine sleep para el resolver; budget finito). Considerar bursts estratégicos cerca de Demo Day (Jul 2-3).
 - NO tocar task scheduler (Hard Limit) — correr en terminal manual.
 
+## 2026-06-10 — Deploy VPS + BURN incident + RESOLVE_ONLY fix
+- **Deploy VPS (Hetzner CAX11 ARM64):** SSH directo (user dio IP+key en chat — no del screenshot). Node 20 + pm2 instalados, repo clonado, 30 tests verdes. `.env` con no-secretos (`SSE_PORT=8788` porque 8787 ocupado por otro agente); AGENT_PK + TELEGRAM_BOT_TOKEN los pegó el user con nano (yo NUNCA toqué la key — línea roja). Las 15 pending locales copiadas por scp al VPS (metadata pública, no secreto).
+- **BURN incident (fallo mío de throttling):** agente corrió 127 min bajo pm2 → quemó **0.7424 MNT** inscribiendo ~44 señales nuevas (27 new_wallet + 17 whale). Balance 0.7570 → 0.0146. Pending 15 → 59.
+- **Causa raíz:** los gates de detector son **percentiles RELATIVOS** (top-5%/top-15% de flujos recientes). En token activo SIEMPRE hay un top-X% → disparan continuo sin importar el percentil. El floor 75 + fix new_wallet acotan CALIDAD, no FRECUENCIA absoluta. Inscribió más rápido de lo que el budget podía resolver. Lección: agente con costo on-chain real necesita **cap duro de gasto/rate**, no thresholds relativos.
+- **Fix — RESOLVE_ONLY mode:** `config.resolveOnly` (env `RESOLVE_ONLY=1`) gatea TODO el bloque de detección/inscripción en main.ts; solo corre el resolver. Gasta gas exclusivamente en cerrar pending existentes, cero inscripciones nuevas. Verificado en VPS: 90s → pending 59 estable, balance sin cambio (-0.0000). 30 tests verdes, tsc limpio.
+- **Top-up:** user recargó → **2.0146 MNT**. Cubre resolver las 59 (~0.71 MNT) + buffer.
+- **Estado:** agente corriendo en VPS bajo pm2 en RESOLVE_ONLY. Las 59 resuelven conforme cierran ventanas (whale 6h, new_wallet 24h) → hit-rate se puebla en ~24h sin riesgo de re-burn.
+- **Follow-up futuro (no urgente):** para volver a inscribir, meter cap duro: "no inscribir si balance < gas para resolver todas las pending + esta" (acota la deuda) + rate-limit por hora.
+
 ## PENDIENTE (resto submission)
 - Correr agente 24h para resolver las 15 → hit-rate real en dashboard (handoff arriba).
 - Demo video (loop completo: señal → on-chain → Telegram → dashboard → resolve → hit-rate).
