@@ -37,13 +37,13 @@ Mantle RPC → block-by-block ingestion → 4 pure-function detectors → on-cha
 - Agent operator: `0xD64872bC1B77B6550e7aA0a51E35E61Ebca21f04`
 
 ## Links (fill before submission)
-- Repo: `…`
+- Repo: https://github.com/megadeth17/cassandra-mantle
 - Telegram channel: `…`
 - Live dashboard: `…`
 - Demo video: `…`
 
 ## DoraHacks BUIDL checklist
-- [ ] Repo link
+- [x] Repo link — https://github.com/megadeth17/cassandra-mantle
 - [ ] Deployed-on-Mantle proof (deploy tx hashes on Mantle Sepolia)
 - [ ] Demo video (full flow: signal → on-chain submit → Telegram → dashboard → resolve → hit-rate update)
 - [ ] Addresses filled above

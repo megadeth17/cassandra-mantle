@@ -35,8 +35,24 @@
 - **Ciclo completo (submit+resolve): ~0.027 MNT → headroom ~38 ciclos**, o ~64 submits solos.
 - Implicación: MNT es el constraint binding (no el tiempo). El gate de precio + score floor + cooldown deben curar a ~30 ciclos resolubles en 3 semanas para un hit-rate real en Demo Day (Jul 2-3).
 
-## PENDIENTE (requiere gastar MNT real — held hasta OK explícito)
-- Setear `MIN_PUBLISH_SCORE` (~75) en backend `.env`, considerar cooldown 6h.
-- Reiniciar agente + resolver en vivo (gasta MNT, corre 3 semanas).
-- Telegram live test end-to-end (envía al canal real).
-- Repo GitHub + push, demo video, SUBMISSION.md links, DoraHacks BUIDL (deadline Jun 15).
+## 2026-06-10 — Repo + Telegram + run en vivo (resultados reales)
+- **Repo GitHub:** https://github.com/megadeth17/cassandra-mantle (público, megadeth17). Seguridad verificada: ningún .env/private key trackeado ni en historial (los 64-hex eran topics de eventos Transfer/Sync). 102 archivos en remoto, solo `.env.example`. Commit con mensaje convencional, sin trailer de atribución (desactivado global).
+- **Telegram verificado end-to-end (primera vez):** `@c4s4ndr4_bot` (id 8991831946) autenticado, mensaje entregado al canal `-1003945448485` (message_id 4). Test honesto: mensaje de conectividad marcado, NO una señal falsa al canal del registro provable.
+- **Agente corrido en vivo — el loop completo FUNCIONA:** arrancó desde head (START_BLOCK=latest ignora el cursor viejo, sin replay de 280k). En ~10 min inscribió señales reales on-chain (verificado: 4+ eventos SignalSubmitted frescos bloques 96488227+), persistió a `.pending.json` con `priceAt` real capturado por subject (gate funcionando — todas priceables). Path completo probado: detector → submit on-chain → pending persistido → (resolver pendiente de ventana).
+- **PROBLEMA descubierto — new_wallet runaway de gas:** floor 65 era muy permisivo. En ~10 min: **17 submits, 0.27 MNT quemados**, 13/15 fueron `new_wallet_accumulation` (dispara en CADA wallet fresca que recibe token priceable — ruido, no alpha). Balance 1.0302 → **0.7570 MNT**.
+- **Mitigación:** agente detenido para proteger budget. `MIN_PUBLISH_SCORE=90` en .env → `new_wallet` (score máx 90) bloqueado estructuralmente; solo whale/liquidity extremos inscriben. El fix de persistencia probó su valor: restart recarga las 15 pending de disco sin perderlas.
+- **Estado:** 15 pending nuevas on-chain (13 new_wallet + 2 whale) + 105 viejas = registro suficiente. Ya NO se necesitan más señales; se necesita RESOLVERLAS. El resolver cierra cada una al cerrar su ventana (abnormal_liq 2h, whale 6h, contract 12h, new_wallet 24h) SI el agente corre en ese momento.
+- **Fix recomendado (follow-up, no hecho):** `new_wallet` necesita umbral de valor mínimo USD, no solo "wallet fresca + cualquier inflow". Floor 90 lo suprime por ahora.
+
+## HANDOFF — correr el agente para poblar el hit-rate (tarea del usuario, 24h+ supervisado)
+- Comando: `cd backend && npm start` (corre `tsx src/main.ts`). Dejar la terminal abierta 6-24h.
+- Con floor 90, el burn nuevo es ~cero; el gasto será de resoluciones (~0.012 MNT c/u × 15 ≈ 0.18 MNT). Buffer: ~0.57 MNT.
+- Monitoreo: balance del operador `0xD648...1F04` en mantlescan; `.pending.json` baja conforme resuelve; dashboard hit-rate sube.
+- NO dejar 100% desatendido (machine sleep para el resolver; budget finito). Considerar bursts estratégicos cerca de Demo Day (Jul 2-3).
+- NO tocar task scheduler (Hard Limit) — correr en terminal manual.
+
+## PENDIENTE (resto submission)
+- Correr agente 24h para resolver las 15 → hit-rate real en dashboard (handoff arriba).
+- Demo video (loop completo: señal → on-chain → Telegram → dashboard → resolve → hit-rate).
+- Deploy dashboard (Vercel) → URL para SUBMISSION.md + canal Telegram público link.
+- DoraHacks BUIDL submission (deadline Jun 15).
