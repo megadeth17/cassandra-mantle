@@ -22,4 +22,14 @@ export const config = {
   // inscribe NOTHING new. Spends gas only on resolutions — used to populate the
   // hit-rate from existing pending without risking another inscription burn.
   resolveOnly: process.env.RESOLVE_ONLY === "1" || process.env.RESOLVE_ONLY === "true",
+  // HARD inscription cap for a bounded campaign. 0 = unlimited. When >0 the
+  // agent stops inscribing after this many on-chain writes (persisted across
+  // restarts) — the gas spend is provably bounded, not discipline-dependent.
+  maxInscriptions: Number(process.env.MAX_INSCRIPTIONS ?? "0"),
+  // Price-move fraction a call must clear to count as a hit (0.05 = 5%).
+  // Lower for short windows / low-vol pairs so resolutions are meaningful.
+  resolveThreshold: Number(process.env.RESOLVE_THRESHOLD ?? "0.05"),
+  // Optional override (seconds) for every detector's resolution window. 0 =
+  // use the per-detector defaults. Short windows let a fresh batch resolve fast.
+  resolveWindowSec: Number(process.env.RESOLVE_WINDOW_SEC ?? "0"),
 };

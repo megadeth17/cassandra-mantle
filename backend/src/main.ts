@@ -11,6 +11,7 @@ import { makeResolver, type PendingCall } from "./resolver/resolver.js";
 import { priceForSubject } from "./resolver/price.js";
 import { loadCursor, saveCursor } from "./state-cursor.js";
 import { loadPending, savePending } from "./state-pending.js";
+import { loadCount, saveCount } from "./state-count.js";
 import { startSSE, broadcast } from "./sse.js";
 import type { ChainEvent, Signal } from "@shared/types";
 
@@ -27,6 +28,7 @@ async function main() {
   const bot = makeBot();
   // Rehydrate in-flight calls so resolutions survive restarts.
   const pending: PendingCall[] = loadPending();
+  let inscribed = loadCount(); // persisted campaign counter for the hard cap
   const resolver = makeResolver(priceOf);
 
   if (bot.configured) bot.start();
@@ -42,6 +44,13 @@ async function main() {
       broadcast({ kind: "signal-dry", signal: { ...s, blockNumber: s.blockNumber.toString() } });
       return;
     }
+    // HARD CAP: stop inscribing once the campaign limit is hit. Checked before
+    // any RPC/gas so a capped run spends nothing further. Persisted, so a
+    // restart cannot bypass it.
+    if (config.maxInscriptions > 0 && inscribed >= config.maxInscriptions) {
+      broadcast({ kind: "thinking", block: s.blockNumber.toString(), evKind: "cap-reached", subject: s.subject });
+      return;
+    }
     // Resolvability gate: compute the submit-time price baseline BEFORE spending
     // gas. If the subject can't be priced, the call could never resolve — so we
     // skip it rather than inscribe a permanently-pending, gas-wasting signal.
@@ -52,6 +61,8 @@ async function main() {
     }
     try {
       const tx = await publisher.submit(s);                 // on-chain FIRST
+      inscribed++;
+      saveCount(inscribed);                                 // bump the hard-cap counter
       pending.push({ id: s.id, type: s.type, direction: s.direction, subject: s.subject, submittedAt: s.ts, priceAt, priceToken: s.priceToken });
       savePending(pending);                                 // durable across restarts
       broadcast({ kind: "signal", signal: { ...s, blockNumber: s.blockNumber.toString() }, tx });

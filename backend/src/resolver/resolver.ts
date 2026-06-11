@@ -43,11 +43,13 @@ export function makeResolver(getPrice: (subject: `0x${string}`) => Promise<numbe
     async resolveDue(pending: PendingCall[], now: number): Promise<string[]> {
       const done: string[] = [];
       for (const c of pending) {
-        const window = RESOLUTION_WINDOW[c.type] ?? 6 * 3600;
+        const window = config.resolveWindowSec > 0
+          ? config.resolveWindowSec
+          : (RESOLUTION_WINDOW[c.type] ?? 6 * 3600);
         if (now - c.submittedAt < window) continue;
         if (!c.priceToken) continue;                 // nothing priceable -> stays pending
         const priceAfter = await getPrice(c.priceToken);
-        const outcome = decideOutcome(c.direction, c.priceAt, priceAfter, 0.05);
+        const outcome = decideOutcome(c.direction, c.priceAt, priceAfter, config.resolveThreshold);
         if (outcome === "unresolvable") continue; // leave pending, retry next pass
         const hash = await wallet.writeContract({
           address, abi: SIGNAL_REGISTRY_ABI, functionName: "resolve",
