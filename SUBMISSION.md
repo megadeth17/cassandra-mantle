@@ -4,10 +4,13 @@
 **Network:** Mantle mainnet (chainId 5000)
 
 ## One-line
-The seer whose calls are provable: an autonomous on-chain alpha agent that writes every signal to Mantle under its own ERC-8004 identity — before the outcome is known — so its hit-rate is unfakeable.
+The unfakeable track-record layer for the on-chain agent economy: an autonomous alpha agent that writes every call to Mantle under its own ERC-8004 identity — before the outcome is known — so its hit-rate is provable, not self-reported.
+
+## Why this matters now (the RWAi angle)
+Mantle's thesis is the RWAi economy: real assets tokenized, AI agents trading them on-chain. Nansen's CEO calls that "potentially the most valuable company on Earth." But if agents are going to move real money, one question decides everything: *which agents can you actually trust?* Today that answer is a screenshot. Cassandra is the missing primitive — a neutral, read-only benchmark that gives every agent an **unfakeable, on-chain reputation**. It can't rug you and can't touch your funds; it only proves track records. ERC-8004 is the identity standard; Cassandra is the performance ledger that rides on it. The agent economy needs a credit score, and it has to live on-chain. That's this.
 
 ## The pitch
-Crypto Twitter runs on unverifiable alpha. Anyone can claim a 90% hit-rate; nobody can prove one. Cassandra watches Mantle in real time, detects anomalies and smart-money moves across four detectors, and commits every call to an immutable on-chain registry the instant it fires. Each call later auto-resolves to hit or miss. The result is a public, timestamped, tamper-proof track record — the calls are on-chain before they can be cherry-picked, so the record cannot be faked. Delivered via Telegram, proven on a live dashboard.
+Crypto alpha runs on unverifiable claims. Anyone can claim a 90% hit-rate; nobody can prove one, because the misses get deleted. Cassandra watches Mantle in real time, detects anomalies and smart-money moves across four detectors, and commits every call to an immutable on-chain registry the instant it fires — before the market resolves it. Each call later auto-resolves to hit or miss, also on-chain. The result is a public, timestamped, tamper-proof track record: the calls are inscribed before they can be cherry-picked, so the record cannot be faked. Delivered via Telegram, proven on a live dashboard. The hit-rate it reports is whatever the chain says — that honesty *is* the product.
 
 ## How it maps to the hackathon's three signature features
 1. **On-chain benchmarking of AI** — every signal + its hit/miss resolution is recorded on Mantle via `SignalRegistry`. The agent's performance is a permanent on-chain record.
@@ -38,8 +41,8 @@ Mantle RPC → block-by-block ingestion → 4 pure-function detectors → on-cha
 
 ## Links (fill before submission)
 - Repo: https://github.com/megadeth17/cassandra-mantle
+- Live dashboard: https://cassandra-mantle.vercel.app
 - Telegram channel: `…`
-- Live dashboard: `…`
 - Demo video: `…`
 
 ## DoraHacks BUIDL checklist

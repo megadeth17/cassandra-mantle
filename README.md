@@ -22,6 +22,10 @@ Cassandra watches Mantle in real time and runs four anomaly / smart-money detect
 
 No transaction execution — observe-and-record only. No paid data APIs (Mantle RPC + pool reserves only).
 
+## Why now — the trust layer for the RWAi economy
+
+Mantle's thesis is the **RWAi economy**: real-world assets tokenized, AI agents trading them on-chain. If agents are going to move real money, one question decides everything — *which agents can you actually trust?* Today the answer is a screenshot. Cassandra is the missing primitive: a neutral, **read-only reputation layer** that gives any agent an unfakeable, on-chain track record. It can't rug you and can't touch your funds — it only proves performance. ERC-8004 is the agent-identity standard; Cassandra is the performance ledger that rides on it. The agent economy needs a credit score, and it has to live on-chain.
+
 ## How it maps to the hackathon's three signature features
 
 | Feature | How |

@@ -8,11 +8,14 @@
 
 ## Shot list
 
-### 1. Hook — the problem (0:00–0:20)
-**Screen:** Crypto Twitter / any influencer "alpha" thread.
-**Say:** "Anyone can claim a 90% hit-rate when the misses get deleted. Trading
-alpha today is unverifiable by design. Cassandra removes the human — and the
-delete button."
+### 1. Hook — the problem (0:00–0:25)
+**Screen:** Crypto Twitter / influencer "alpha" thread → cut to a Mantle RWAi
+headline (the Nansen quote).
+**Say:** "Mantle is building the RWAi economy — real assets, AI agents trading
+them on-chain. But if agents move real money, one question decides everything:
+which agents can you actually trust? Today the answer is a screenshot. Anyone
+can claim 90% when the misses get deleted. Cassandra fixes that — it removes the
+human, and the delete button."
 
 ### 2. The thesis (0:20–0:45)
 **Screen:** Dashboard hero ("The record can't be faked when it's inscribed").
@@ -53,8 +56,9 @@ This is on-chain benchmarking of AI: the wins AND the losses, unfakeable."
 ### 6. Close (2:45–3:00)
 **Screen:** CTA band ("The calls are already written. Go check.") → repo +
 contract addresses.
-**Say:** "Cassandra — the seer whose calls are provable. Built on Mantle,
-ERC-8004 identity, fully open-source. The calls are already written. Go check."
+**Say:** "Cassandra — the unfakeable reputation layer for the on-chain agent
+economy. The seer whose calls are provable. Built on Mantle, ERC-8004 identity,
+fully open-source. The calls are already written. Go check."
 
 ---
 
