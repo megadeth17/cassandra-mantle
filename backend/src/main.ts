@@ -19,6 +19,13 @@ const POLL_MS = 5000;
 
 const priceOf = priceForSubject;
 
+// Subjects priced via the USDC/USDT pool never move past any sane threshold —
+// inscribing them guarantees a meaningless miss. Excluded from inscription.
+const STABLE_TOKENS = new Set([
+  "0x09bc4e0d864854c6afb6eb9a9cdf58ac190d0df9", // USDC
+  "0x201eba5cc46d216ce6dc03f6a759e8e766e956ae", // USDT
+]);
+
 async function main() {
   const state = new RollingState({ windowSec: 24 * 3600 });
   const liquidityBaseline = new RollingBaseline(50);
@@ -39,6 +46,7 @@ async function main() {
 
   async function publish(s: Signal, now: number) {
     if (s.score < config.minPublishScore) return;          // conviction floor
+    if (s.priceToken && STABLE_TOKENS.has(s.priceToken.toLowerCase())) return; // stables can't hit any threshold
     if (!cooldown.allow(s.type, s.subject, s.ts)) return;
     if (!publisher.configured) {
       broadcast({ kind: "signal-dry", signal: { ...s, blockNumber: s.blockNumber.toString() } });
