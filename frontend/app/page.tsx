@@ -141,6 +141,12 @@ export default function Home() {
                   <div className="metric-sub">
                     From {resolved.length} resolved · {calls.length} inscribed on-chain
                   </div>
+                  <div
+                    className="eyebrow"
+                    style={{ justifyContent: "center", marginTop: 10, opacity: 0.7, fontStyle: "italic", textTransform: "none", letterSpacing: 0 }}
+                  >
+                    Recomputed from chain state by anyone — unfakeable, win or lose.
+                  </div>
                 </>
               ) : (
                 <>
