@@ -30,7 +30,7 @@ Mantle RPC → block-by-block ingestion → 4 pure-function detectors → on-cha
 
 ## Tests
 - Contracts: 13 passing (Hardhat) — identity single-mint + soulbound, registry submit/resolve ACL, once-only resolution, negative paths.
-- Backend: 22 passing (Vitest) — every detector, rolling state/baseline/cooldown, log decode, evidence hash + enum encoding, outcome decision + unresolvable guard, flow dedup, telegram formatting.
+- Backend: 30 passing (Vitest) — every detector, rolling state/baseline/cooldown, log decode, evidence hash + enum encoding, outcome decision + unresolvable guard, flow dedup, pending persistence, telegram formatting.
 - Frontend: clean `next build`.
 
 ## Deployed addresses (Mantle mainnet, chainId 5000)
